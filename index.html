@@ -9,106 +9,199 @@
 </head>
 <body class="gradient-bg min-h-screen text-white">
   
-  <!-- Header -->
-  <header class="w-full py-6 px-4">
-    <div class="container mx-auto">
-      <h1 class="text-4xl md:text-5xl font-bold text-center flex items-center justify-center gap-3">
-        🎤 <span class="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">KaraoPlay</span>
-      </h1>
-      <p class="text-center mt-2 text-purple-200">Sistema Inteligente de Karaokê</p>
+  <!-- Header Fixo -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-purple-900/30 border-b border-white/10">
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🎤</span>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+              KaraoPlay
+            </h1>
+            <p class="text-xs md:text-sm text-purple-200 hidden sm:block">Sistema Inteligente de Karaokê</p>
+          </div>
+        </div>
+        
+        <!-- Informações do Usuário no Header -->
+        <div id="user-info-header" style="display:none;" class="glass-effect rounded-lg px-3 py-2 md:px-4 md:py-2">
+          <p class="text-xs md:text-sm">
+            <span class="hidden sm:inline text-purple-200">👤 </span>
+            <span id="user-name-header" class="font-semibold"></span>
+          </p>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="container mx-auto px-4 py-8 max-w-6xl">
+  <main class="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
     
     <!-- Seção de Login -->
-    <section id="cliente-section" class="glass-effect rounded-2xl p-8 shadow-2xl slide-in max-w-md mx-auto">
-      <h2 class="text-2xl font-semibold mb-6 text-center">👋 Bem-vindo!</h2>
-      <div class="space-y-4">
-        <input 
-          type="text" 
-          id="cliente-nome" 
-          placeholder="Digite seu nome ou mesa (ex: Mesa 3)"
-          class="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200"
-        >
-        <button 
-          id="entrar"
-          class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg"
-        >
-          Entrar no Karaokê 🎵
-        </button>
-      </div>
-    </section>
-
-    <!-- Seção de Busca -->
-    <section id="busca-section" style="display:none;" class="slide-in">
-      <div class="glass-effect rounded-2xl p-6 shadow-2xl mb-6">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="text-2xl">🔍</span>
-          <h2 class="text-2xl font-semibold">Buscar Músicas</h2>
+    <section id="cliente-section" class="min-h-[60vh] flex items-center justify-center">
+      <div class="glass-effect rounded-2xl p-6 md:p-8 shadow-2xl slide-in w-full max-w-md">
+        <div class="text-center mb-6">
+          <div class="text-6xl mb-4">🎵</div>
+          <h2 class="text-2xl md:text-3xl font-bold mb-2">Bem-vindo!</h2>
+          <p class="text-purple-200 text-sm">Entre para começar a cantar</p>
         </div>
-        <div class="flex flex-col sm:flex-row gap-3">
+        
+        <div class="space-y-4">
           <input 
             type="text" 
-            id="busca" 
-            placeholder="Digite o nome da música ou artista..."
-            class="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200"
+            id="cliente-nome" 
+            placeholder="Digite seu nome ou mesa (ex: Mesa 3)"
+            class="w-full px-4 py-3 md:py-4 rounded-xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200 transition-all"
           >
           <button 
-            id="buscar"
-            class="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg"
+            id="entrar"
+            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 md:py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg text-base md:text-lg"
           >
-            Buscar 🎵
+            Entrar no Karaokê 🎶
           </button>
         </div>
-        <div id="resultados" class="mt-6 space-y-3"></div>
       </div>
     </section>
 
-    <div class="grid md:grid-cols-2 gap-6">
+    <!-- Layout Principal (após login) -->
+    <div id="main-content" style="display:none;" class="slide-in">
       
-      <!-- Tocando Agora -->
-      <section id="execucao" class="glass-effect rounded-2xl p-6 shadow-2xl">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="text-3xl pulse-animation">🎶</span>
-          <h2 class="text-2xl font-semibold">Tocando Agora</h2>
-        </div>
-        <div class="space-y-4">
-          <div class="bg-white/10 rounded-lg p-4 min-h-[100px] flex flex-col justify-center">
-            <p id="atual-musica" class="text-xl font-semibold text-purple-200">Aguardando músicas...</p>
-            <p id="atual-cliente" class="text-sm text-purple-300 mt-2"></p>
+      <!-- Seção de Busca -->
+      <section class="mb-6">
+        <div class="glass-effect rounded-2xl p-4 md:p-6 shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-2xl md:text-3xl">🔍</span>
+            <h2 class="text-xl md:text-2xl font-semibold">Buscar Músicas</h2>
           </div>
-          <audio 
-            id="player" 
-            controls 
-            class="w-full rounded-lg"
-            style="filter: hue-rotate(270deg) saturate(2);"
-          ></audio>
+          
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input 
+              type="text" 
+              id="busca" 
+              placeholder="Digite o nome da música, artista ou gênero..."
+              class="flex-1 px-4 py-3 rounded-xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200 transition-all"
+            >
+            <button 
+              id="buscar"
+              class="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg whitespace-nowrap"
+            >
+              <span class="hidden sm:inline">Buscar</span> 🔎
+            </button>
+          </div>
+          
+          <!-- Resultados da Busca -->
+          <div id="resultados" class="mt-6 space-y-3 max-h-[400px] overflow-y-auto pr-2"></div>
         </div>
       </section>
 
-      <!-- Fila de Execução -->
-      <section id="fila" class="glass-effect rounded-2xl p-6 shadow-2xl">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="text-3xl">⏳</span>
-          <h2 class="text-2xl font-semibold">Próximas Músicas</h2>
-        </div>
-        <div class="bg-white/10 rounded-lg p-4 max-h-[300px] overflow-y-auto">
-          <ul id="fila-lista" class="space-y-2"></ul>
-        </div>
-        <div class="mt-4 text-center text-purple-200 text-sm">
-          <span id="total-fila">0 músicas na fila</span>
-        </div>
-      </section>
+      <!-- Grid Responsivo: Player e Fila -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Player - Tocando Agora -->
+        <section class="glass-effect rounded-2xl p-4 md:p-6 shadow-2xl h-fit">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl md:text-4xl pulse-animation">🎶</span>
+            <div class="flex-1">
+              <h2 class="text-xl md:text-2xl font-semibold">Tocando Agora</h2>
+              <p class="text-xs text-purple-200 hidden sm:block">Música atual em reprodução</p>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- Card da Música Atual -->
+            <div class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl p-4 md:p-6 min-h-[120px] flex flex-col justify-center border border-white/10">
+              <p id="atual-musica" class="text-lg md:text-xl font-bold text-white mb-2">
+                Aguardando músicas...
+              </p>
+              <p id="atual-cliente" class="text-sm md:text-base text-purple-200"></p>
+            </div>
+            
+            <!-- Player de Áudio -->
+            <div class="bg-white/5 rounded-xl p-3 md:p-4">
+              <audio 
+                id="player" 
+                controls 
+                class="w-full"
+                style="filter: hue-rotate(270deg) saturate(2);"
+              ></audio>
+            </div>
+            
+            <!-- Estatísticas -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white/10 rounded-lg p-3 text-center">
+                <p class="text-2xl font-bold" id="total-tocadas">0</p>
+                <p class="text-xs text-purple-200">Músicas tocadas</p>
+              </div>
+              <div class="bg-white/10 rounded-lg p-3 text-center">
+                <p class="text-2xl font-bold" id="total-fila-stat">0</p>
+                <p class="text-xs text-purple-200">Na fila</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-    </div>
+        <!-- Fila de Execução -->
+        <section class="glass-effect rounded-2xl p-4 md:p-6 shadow-2xl h-fit lg:sticky lg:top-24">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl md:text-4xl">⏳</span>
+              <div>
+                <h2 class="text-xl md:text-2xl font-semibold">Próximas Músicas</h2>
+                <p id="total-fila" class="text-xs md:text-sm text-purple-200">0 músicas na fila</p>
+              </div>
+            </div>
+            
+            <!-- Botão Limpar Fila -->
+            <button 
+              id="limpar-fila"
+              class="bg-red-500/20 hover:bg-red-500/40 text-red-200 px-3 py-2 rounded-lg text-xs font-semibold transition-all hidden"
+              title="Limpar fila"
+            >
+              🗑️
+            </button>
+          </div>
+          
+          <!-- Lista da Fila -->
+          <div class="bg-white/5 rounded-xl p-3 md:p-4 max-h-[400px] lg:max-h-[500px] overflow-y-auto">
+            <ul id="fila-lista" class="space-y-2"></ul>
+          </div>
+        </section>
 
-    <!-- Informações do Usuário -->
-    <div id="user-info" style="display:none;" class="glass-effect rounded-2xl p-4 shadow-2xl mt-6 text-center">
-      <p class="text-purple-200">Conectado como: <span id="user-name" class="font-semibold text-white"></span></p>
+      </div>
+
+      <!-- Cards de Informações Adicionais -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        
+        <div class="glass-effect rounded-xl p-4 text-center">
+          <div class="text-3xl mb-2">🎵</div>
+          <p class="text-sm text-purple-200">Catálogo com</p>
+          <p class="text-2xl font-bold" id="total-catalogo">0</p>
+          <p class="text-xs text-purple-200">músicas disponíveis</p>
+        </div>
+        
+        <div class="glass-effect rounded-xl p-4 text-center">
+          <div class="text-3xl mb-2">⭐</div>
+          <p class="text-sm text-purple-200">Músicas</p>
+          <p class="text-2xl font-bold">Ilimitadas</p>
+          <p class="text-xs text-purple-200">você pode adicionar</p>
+        </div>
+        
+        <div class="glass-effect rounded-xl p-4 text-center">
+          <div class="text-3xl mb-2">🎤</div>
+          <p class="text-sm text-purple-200">Sistema</p>
+          <p class="text-2xl font-bold">Online</p>
+          <p class="text-xs text-purple-200">funcionando 24/7</p>
+        </div>
+        
+      </div>
+
     </div>
 
   </main>
+
+  <!-- Footer -->
+  <footer class="text-center py-6 text-purple-200 text-sm mt-8">
+    <p>🎤 KaraoPlay - Desenvolvido com ❤️ para você cantar</p>
+  </footer>
 
   <script src="script.js"></script>
 </body>
