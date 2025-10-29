@@ -3,6 +3,7 @@ let clienteAtual = null;
 let fila = [];
 let tocandoAgora = null;
 let musicasTocadas = 0;
+let adminLogado = false;
 
 const player = document.getElementById("player");
 const resultadosDiv = document.getElementById("resultados");
@@ -272,6 +273,109 @@ window.addEventListener('scroll', () => {
   lastScroll = currentScroll;
 });
 
+// ======== Funções Admin ========
+function verificarAdminLogado() {
+  const adminData = localStorage.getItem('adminCredentials');
+  if (adminData) {
+    const { username, password } = JSON.parse(adminData);
+    if (username === 'admin' && password === 'admin') {
+      adminLogado = true;
+      atualizarUIAdmin();
+      return true;
+    }
+  }
+  adminLogado = false;
+  atualizarUIAdmin();
+  return false;
+}
+
+function loginAdmin(username, password) {
+  if (username === 'admin' && password === 'admin') {
+    // Armazenar no localStorage
+    localStorage.setItem('adminCredentials', JSON.stringify({ username, password }));
+    adminLogado = true;
+    atualizarUIAdmin();
+    fecharModalAdmin();
+    showNotification('Login de admin realizado com sucesso! 👑');
+    return true;
+  } else {
+    showNotification('⚠️ Credenciais inválidas!');
+    return false;
+  }
+}
+
+function logoutAdmin() {
+  localStorage.removeItem('adminCredentials');
+  adminLogado = false;
+  atualizarUIAdmin();
+  showNotification('Logout realizado! 🔐');
+}
+
+function atualizarUIAdmin() {
+  const loginBtn = document.getElementById('admin-login-btn');
+  const loggedInDiv = document.getElementById('admin-logged-in');
+
+  if (adminLogado) {
+    loginBtn.style.display = 'none';
+    loggedInDiv.style.display = 'block';
+  } else {
+    loginBtn.style.display = 'block';
+    loggedInDiv.style.display = 'none';
+  }
+}
+
+function abrirModalAdmin() {
+  document.getElementById('admin-login-modal').style.display = 'flex';
+  document.getElementById('admin-username').focus();
+}
+
+function fecharModalAdmin() {
+  document.getElementById('admin-login-modal').style.display = 'none';
+  document.getElementById('admin-username').value = '';
+  document.getElementById('admin-password').value = '';
+}
+
+// ======== Eventos Admin ========
+document.getElementById('admin-login-btn').onclick = abrirModalAdmin;
+
+document.getElementById('admin-logout-btn').onclick = logoutAdmin;
+
+document.getElementById('admin-login-submit').onclick = () => {
+  const username = document.getElementById('admin-username').value.trim();
+  const password = document.getElementById('admin-password').value.trim();
+
+  if (!username || !password) {
+    showNotification('⚠️ Preencha usuário e senha!');
+    return;
+  }
+
+  loginAdmin(username, password);
+};
+
+document.getElementById('admin-login-cancel').onclick = fecharModalAdmin;
+
+document.getElementById('admin-username').onkeypress = (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('admin-password').focus();
+  }
+};
+
+document.getElementById('admin-password').onkeypress = (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('admin-login-submit').click();
+  }
+};
+
+// Fechar modal ao clicar fora
+document.getElementById('admin-login-modal').onclick = (e) => {
+  if (e.target.id === 'admin-login-modal') {
+    fecharModalAdmin();
+  }
+};
+
 // Inicializar
 updateFila();
 totalCatalogo.textContent = catalogo.length;
+
+// Verificar se admin já está logado
+verificarAdminLogado();

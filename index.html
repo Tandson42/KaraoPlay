@@ -24,11 +24,35 @@
         </div>
         
         <!-- Informações do Usuário no Header -->
-        <div id="user-info-header" style="display:none;" class="glass-effect rounded-lg px-3 py-2 md:px-4 md:py-2">
-          <p class="text-xs md:text-sm">
-            <span class="hidden sm:inline text-purple-200">👤 </span>
-            <span id="user-name-header" class="font-semibold"></span>
-          </p>
+        <div class="flex items-center gap-3">
+          <div id="user-info-header" style="display:none;" class="glass-effect rounded-lg px-3 py-2 md:px-4 md:py-2">
+            <p class="text-xs md:text-sm">
+              <span class="hidden sm:inline text-purple-200">👤 </span>
+              <span id="user-name-header" class="font-semibold"></span>
+            </p>
+          </div>
+
+          <!-- Login Admin -->
+          <div id="admin-login-section">
+            <button
+              id="admin-login-btn"
+              class="glass-effect rounded-lg px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold hover:bg-white/20 transition-all"
+            >
+              🔐 Admin
+            </button>
+            <div id="admin-logged-in" style="display:none;" class="glass-effect rounded-lg px-3 py-2 md:px-4 md:py-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs md:text-sm text-green-400">👑 Admin</span>
+                <button
+                  id="admin-logout-btn"
+                  class="text-red-400 hover:text-red-300 text-xs font-semibold"
+                  title="Logout"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -202,6 +226,46 @@
   <footer class="text-center py-6 text-purple-200 text-sm mt-8">
     <p>🎤 KaraoPlay - Desenvolvido com ❤️ para você cantar</p>
   </footer>
+
+  <!-- Modal de Login Admin -->
+  <div id="admin-login-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" style="display:none;">
+    <div class="glass-effect rounded-2xl p-6 md:p-8 shadow-2xl w-full max-w-md mx-4">
+      <div class="text-center mb-6">
+        <div class="text-6xl mb-4">🔐</div>
+        <h2 class="text-2xl md:text-3xl font-bold mb-2">Login Admin</h2>
+        <p class="text-purple-200 text-sm">Entre com suas credenciais</p>
+      </div>
+
+      <div class="space-y-4">
+        <input
+          type="text"
+          id="admin-username"
+          placeholder="Usuário"
+          class="w-full px-4 py-3 md:py-4 rounded-xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200 transition-all"
+        >
+        <input
+          type="password"
+          id="admin-password"
+          placeholder="Senha"
+          class="w-full px-4 py-3 md:py-4 rounded-xl bg-white/20 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-purple-200 transition-all"
+        >
+        <div class="flex gap-3">
+          <button
+            id="admin-login-submit"
+            class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 md:py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+          >
+            Entrar
+          </button>
+          <button
+            id="admin-login-cancel"
+            class="flex-1 bg-gray-500/20 hover:bg-gray-500/40 text-white font-semibold py-3 md:py-4 rounded-xl transition-all"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
