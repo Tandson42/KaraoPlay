@@ -5,7 +5,11 @@ let tocandoAgora = null;
 let musicasTocadas = 0;
 let adminLogado = false;
 
-const player = document.getElementById("player");
+// YouTube API Configuration
+const YOUTUBE_API_KEY = 'FALTANDO'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
+let youtubePlayer = null;
+
+const playerContainer = document.getElementById("player-container");
 const resultadosDiv = document.getElementById("resultados");
 const filaLista = document.getElementById("fila-lista");
 const totalFila = document.getElementById("total-fila");
@@ -13,17 +17,110 @@ const totalFilaStat = document.getElementById("total-fila-stat");
 const totalTocadas = document.getElementById("total-tocadas");
 const totalCatalogo = document.getElementById("total-catalogo");
 
-// ======== Mock de músicas expandido ========
-const catalogo = [
-  { titulo: "Evidências", artista: "Chitãozinho & Xororó", src: "evidencias.mp3", genero: "Sertanejo" },
-  { titulo: "Tempo Perdido", artista: "Legião Urbana", src: "tempo_perdido.mp3", genero: "Rock" },
-  { titulo: "Garota de Ipanema", artista: "Tom Jobim", src: "ipanema.mp3", genero: "Bossa Nova" },
-  { titulo: "Sozinho", artista: "Caetano Veloso", src: "sozinho.mp3", genero: "MPB" },
-  { titulo: "Asa Branca", artista: "Luiz Gonzaga", src: "asa_branca.mp3", genero: "Forró" },
-  { titulo: "Aquarela", artista: "Toquinho", src: "aquarela.mp3", genero: "MPB" },
-  { titulo: "Eu Sei Que Vou Te Amar", artista: "Tom Jobim", src: "eu_sei.mp3", genero: "Bossa Nova" },
-  { titulo: "País Tropical", artista: "Jorge Ben Jor", src: "pais_tropical.mp3", genero: "Samba" },
-];
+// ======== Funções YouTube API ========
+function onYouTubeIframeAPIReady() {
+  youtubePlayer = new YT.Player('youtube-player', {
+    height: '200',
+    width: '100%',
+    playerVars: {
+      'playsinline': 1,
+      'controls': 1,
+      'modestbranding': 1,
+      'rel': 0,
+      'showinfo': 0,
+      'iv_load_policy': 3,
+      'fs': 0
+    },
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange,
+      'onError': onPlayerError
+    }
+  });
+}
+
+function onPlayerReady(event) {
+  console.log('YouTube Player ready');
+}
+
+function onPlayerStateChange(event) {
+  if (event.data === YT.PlayerState.ENDED) {
+    playNext();
+  }
+}
+
+function onPlayerError(event) {
+  console.error('YouTube Player Error:', event.data);
+  showNotification('⚠️ Vídeo indisponível. Pulando para próxima música...');
+  setTimeout(playNext, 1000);
+}
+
+async function buscarVideosYouTube(query) {
+  if (!query.trim()) {
+    resultadosDiv.innerHTML = `
+      <div class="text-center py-12 empty-state">
+        <div class="text-6xl mb-4">🔍</div>
+        <p class="text-xl text-purple-200 mb-2">Digite algo para buscar</p>
+        <p class="text-sm text-purple-300">Busque por músicas, artistas ou gêneros</p>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' karaoke OR lyrics')}&type=video&maxResults=20&key=${YOUTUBE_API_KEY}&videoEmbeddable=true&videoSyndicated=true`
+    );
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) {
+      resultadosDiv.innerHTML = `
+        <div class="text-center py-12 empty-state">
+          <div class="text-6xl mb-4">🔍</div>
+          <p class="text-xl text-purple-200 mb-2">Nenhum vídeo encontrado</p>
+          <p class="text-sm text-purple-300">Tente buscar por outro termo</p>
+        </div>
+      `;
+      return;
+    }
+
+    resultadosDiv.innerHTML = data.items.map(item => `
+      <div class="glass-effect musica-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <img src="${item.snippet.thumbnails.medium.url}" alt="${item.snippet.title}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOUI5QkE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iPk5vIFRodW1ibmFpbDwvdGV4dD4KPHN2Zz4='">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-sm md:text-base truncate">${item.snippet.title}</p>
+          <p class="text-purple-200 text-xs md:text-sm truncate">${item.snippet.channelTitle}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="inline-block px-2 py-1 bg-red-500/30 rounded-lg text-xs font-semibold">
+              YouTube
+            </span>
+          </div>
+        </div>
+        <button
+          onclick="addToFila('${item.id.videoId}', '${escapeHtml(item.snippet.title)}', '${escapeHtml(item.snippet.channelTitle)}', '${item.snippet.thumbnails.medium.url}')"
+          class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-semibold px-4 py-2 md:px-5 md:py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg whitespace-nowrap text-sm md:text-base"
+        >
+          ➕ <span class="hidden sm:inline">Adicionar</span>
+        </button>
+      </div>
+    `).join("");
+
+  } catch (error) {
+    console.error('Erro na busca:', error);
+    resultadosDiv.innerHTML = `
+      <div class="text-center py-12 empty-state">
+        <div class="text-6xl mb-4">⚠️</div>
+        <p class="text-xl text-purple-200 mb-2">Erro na busca</p>
+        <p class="text-sm text-purple-300">Verifique sua conexão ou chave da API</p>
+      </div>
+    `;
+  }
+}
 
 // ======== Funções principais ========
 function addCliente(nome) {
@@ -39,56 +136,19 @@ function addCliente(nome) {
   document.getElementById("user-info-header").style.display = "block";
   document.getElementById("user-name-header").textContent = clienteAtual;
   
-  // Mostrar todas as músicas inicialmente
-  buscarMusica("");
-  
-  // Atualizar total do catálogo
-  totalCatalogo.textContent = catalogo.length;
+  // Mostrar busca vazia inicialmente
+  buscarVideosYouTube("");
+
+  // Atualizar total do catálogo (agora dinâmico)
+  totalCatalogo.textContent = "∞";
   
   // Feedback visual
   showNotification(`Bem-vindo, ${clienteAtual}! 🎉`);
 }
 
+// Função buscarMusica mantida para compatibilidade, mas redireciona para YouTube
 function buscarMusica(query) {
-  const termo = query.toLowerCase().trim();
-  const resultados = termo === "" 
-    ? catalogo 
-    : catalogo.filter(m => 
-        m.titulo.toLowerCase().includes(termo) || 
-        m.artista.toLowerCase().includes(termo) ||
-        m.genero.toLowerCase().includes(termo)
-      );
-
-  if (resultados.length === 0) {
-    resultadosDiv.innerHTML = `
-      <div class="text-center py-12 empty-state">
-        <div class="text-6xl mb-4">🔍</div>
-        <p class="text-xl text-purple-200 mb-2">Nenhuma música encontrada</p>
-        <p class="text-sm text-purple-300">Tente buscar por outro termo</p>
-      </div>
-    `;
-    return;
-  }
-
-  resultadosDiv.innerHTML = resultados.map(m => `
-    <div class="glass-effect musica-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <div class="flex-1 min-w-0">
-        <p class="font-bold text-base md:text-lg truncate">${m.titulo}</p>
-        <p class="text-purple-200 text-sm truncate">${m.artista}</p>
-        <div class="flex items-center gap-2 mt-2">
-          <span class="inline-block px-2 py-1 bg-purple-500/30 rounded-lg text-xs font-semibold">
-            ${m.genero}
-          </span>
-        </div>
-      </div>
-      <button 
-        onclick="addToFila('${escapeHtml(m.titulo)}', '${escapeHtml(m.artista)}', '${m.src}')"
-        class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-semibold px-4 py-2 md:px-5 md:py-3 rounded-xl transition-all transform hover:scale-105 shadow-lg whitespace-nowrap text-sm md:text-base"
-      >
-        ➕ <span class="hidden sm:inline">Adicionar</span>
-      </button>
-    </div>
-  `).join("");
+  buscarVideosYouTube(query);
 }
 
 function escapeHtml(text) {
@@ -102,13 +162,13 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-function addToFila(titulo, artista, src) {
-  fila.push({ cliente: clienteAtual, titulo, artista, src });
+function addToFila(videoId, titulo, canal, thumbnail) {
+  fila.push({ cliente: clienteAtual, videoId, titulo, canal, thumbnail });
   updateFila();
-  
+
   // Feedback visual
   showNotification(`"${titulo}" adicionada à fila! 🎵`);
-  
+
   if (!tocandoAgora) playNext();
 }
 
@@ -178,23 +238,22 @@ function playNext() {
     tocandoAgora = null;
     document.getElementById("atual-musica").textContent = "Aguardando próxima música...";
     document.getElementById("atual-cliente").textContent = "";
-    player.src = "";
+    if (youtubePlayer && youtubePlayer.stopVideo) {
+      youtubePlayer.stopVideo();
+    }
     return;
   }
 
   tocandoAgora = fila.shift();
   updateFila();
-  
-  player.src = tocandoAgora.src;
+
+  if (youtubePlayer && youtubePlayer.loadVideoById) {
+    youtubePlayer.loadVideoById(tocandoAgora.videoId);
+  }
+
   document.getElementById("atual-musica").textContent = `♪ ${tocandoAgora.titulo}`;
-  document.getElementById("atual-cliente").textContent = `🎤 ${tocandoAgora.cliente} • ${tocandoAgora.artista}`;
-  
-  player.play().catch(err => {
-    console.log("Erro ao reproduzir:", err);
-    showNotification("⚠️ Arquivo de áudio não encontrado. Pulando...");
-    setTimeout(playNext, 1000);
-  });
-  
+  document.getElementById("atual-cliente").textContent = `🎤 ${tocandoAgora.cliente} • ${tocandoAgora.canal}`;
+
   // Atualizar contador de músicas tocadas
   musicasTocadas++;
   totalTocadas.textContent = musicasTocadas;
@@ -256,7 +315,7 @@ document.getElementById("busca").oninput = (e) => {
 
 document.getElementById("limpar-fila").onclick = limparFila;
 
-player.onended = playNext;
+// Removido: player.onended = playNext; (agora controlado pelo YouTube Player)
 
 // Scroll header effect
 let lastScroll = 0;
@@ -375,7 +434,7 @@ document.getElementById('admin-login-modal').onclick = (e) => {
 
 // Inicializar
 updateFila();
-totalCatalogo.textContent = catalogo.length;
+totalCatalogo.textContent = "∞"; // Catálogo ilimitado do YouTube
 
 // Verificar se admin já está logado
 verificarAdminLogado();

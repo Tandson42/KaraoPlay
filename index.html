@@ -6,6 +6,8 @@
   <title>🎤 KaraoPlay - Sistema de Karaokê</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css">
+  <!-- YouTube IFrame Player API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body class="gradient-bg min-h-screen text-white">
   
@@ -139,14 +141,9 @@
               <p id="atual-cliente" class="text-sm md:text-base text-purple-200"></p>
             </div>
             
-            <!-- Player de Áudio -->
+            <!-- Player de YouTube -->
             <div class="bg-white/5 rounded-xl p-3 md:p-4">
-              <audio 
-                id="player" 
-                controls 
-                class="w-full"
-                style="filter: hue-rotate(270deg) saturate(2);"
-              ></audio>
+              <div id="youtube-player" class="w-full"></div>
             </div>
             
             <!-- Estatísticas -->
