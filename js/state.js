@@ -1,4 +1,5 @@
-// ======== Estado Compartilhado e Utilitários ========
+// ======== Estado Compartilhado, Utilitários e Otimizações de Busca ========
+
 // Estado da aplicação
 let clienteAtual = null;
 let fila = [];
@@ -7,8 +8,48 @@ let musicasTocadas = 0;
 let adminLogado = false;
 
 // YouTube API
-const YOUTUBE_API_KEY = 'FALTANDO'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
+const YOUTUBE_API_KEY = 'AIzaSyCBKOt1b3Yx9GYaVS68tmdDzwny1i7tDfE'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
 let youtubePlayer = null;
+
+// ======== Otimizações de Busca (Estado e Utils) ========
+// Estado de busca e cota
+let lastQueryTerm = '';
+let lastResultsByTerm = new Map(); // termo -> { data, expiresAt }
+let lastPageTokenByTerm = new Map(); // termo -> { nextPageToken, prevPageToken }
+let currentRequestId = 0; // controle de corrida
+let searchCooldownUntil = 0; // epoch ms
+
+function cacheKey(term) { return `yt_search_${term}`; }
+function saveCache(term, payload, ttlMs = 20 * 60 * 1000) { // 20 minutos
+  const expiresAt = Date.now() + ttlMs;
+  lastResultsByTerm.set(term, { data: payload, expiresAt });
+  try {
+    sessionStorage.setItem(cacheKey(term), JSON.stringify({ data: payload, expiresAt }));
+  } catch (_) {}
+}
+function readCache(term) {
+  const mem = lastResultsByTerm.get(term);
+  if (mem && mem.expiresAt > Date.now()) return mem.data;
+  try {
+    const raw = sessionStorage.getItem(cacheKey(term));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.expiresAt > Date.now()) {
+      lastResultsByTerm.set(term, parsed);
+      return parsed.data;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// Debounce genérico
+function debounce(fn, wait = 500) {
+  let t;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
 
 // Referências de DOM
 const playerContainer = document.getElementById("player-container");

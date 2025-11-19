@@ -51,12 +51,16 @@ function addCliente(nome) {
     }
   };
   
-  document.getElementById("busca").oninput = (e) => {
-    // Busca em tempo real
-    const termo = e.target.value;
-    if (termo.length >= 2 || termo.length === 0) {
+  const debouncedSearch = debounce(() => {
+    const termo = document.getElementById("busca").value;
+    // Mínimo 3 caracteres ou vazio
+    if (termo.trim().length >= 3 || termo.trim().length === 0) {
       buscarMusica(termo);
     }
+  }, 500);
+
+  document.getElementById("busca").oninput = () => {
+    debouncedSearch();
   };
 
   document.getElementById("limpar-fila").onclick = limparFila;
