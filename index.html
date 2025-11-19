@@ -6,9 +6,7 @@
   <title>🎤 KaraoPlay - Sistema de Karaokê</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css">
-  <!-- YouTube IFrame Player API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
-</head>
+  </head>
 <body class="gradient-bg min-h-screen text-white">
   
   <!-- Header Fixo -->
@@ -264,6 +262,12 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
-</body>
+  <!-- App Scripts (carregados após o DOM) -->
+  <script src="js/state.js"></script>
+  <script src="js/queue.js"></script>
+  <script src="js/youtube.js"></script>
+  <script src="js/ui.js"></script>
+  <!-- YouTube IFrame Player API ao final para garantir que o callback já exista -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  </body>
 </html>
