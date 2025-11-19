@@ -8,7 +8,7 @@ let musicasTocadas = 0;
 let adminLogado = false;
 
 // YouTube API
-const YOUTUBE_API_KEY = 'AIzaSyCBKOt1b3Yx9GYaVS68tmdDzwny1i7tDfE'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
+const YOUTUBE_API_KEY = 'KEY'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
 let youtubePlayer = null;
 
 // ======== Otimizações de Busca (Estado e Utils) ========
