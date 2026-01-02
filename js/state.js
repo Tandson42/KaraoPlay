@@ -8,7 +8,7 @@ let musicasTocadas = 0;
 let adminLogado = false;
 
 // YouTube API
-const YOUTUBE_API_KEY = 'AIzaSyDx2m7o4INCaGujCJMjcLQYtM1pDYN64tY'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
+const YOUTUBE_API_KEY = 'API_KEY'; // INSIRA SUA CHAVE DA YOUTUBE DATA API V3 AQUI
 let youtubePlayer = null;
 
 // ======== Otimizações de Busca (Estado e Utils) ========
@@ -188,7 +188,6 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
 }
 
 // Referências de DOM
-const playerContainer = document.getElementById("player-container");
 const resultadosDiv = document.getElementById("resultados");
 const filaLista = document.getElementById("fila-lista");
 const totalFila = document.getElementById("total-fila");
@@ -226,4 +225,45 @@ function showNotification(message) {
     notification.style.transition = 'all 0.3s ease-out';
     setTimeout(() => notification.remove(), 300);
   }, 3000);
+}
+
+// Métricas da API para monitoramento
+const apiMetrics = {
+  quotaExceeded: 0,
+  cacheHits: 0,
+  cacheMisses: 0,
+  apiCalls: 0,
+  apiErrors: 0
+};
+
+// Funções de logging para métricas
+function logCacheHit(term) {
+  apiMetrics.cacheHits++;
+  if (console && console.debug) {
+    console.debug(`[Cache Hit] ${term}`);
+  }
+}
+
+function logCacheMiss(term) {
+  apiMetrics.cacheMisses++;
+  if (console && console.debug) {
+    console.debug(`[Cache Miss] ${term}`);
+  }
+}
+
+function logApiCall(service, details) {
+  apiMetrics.apiCalls++;
+  if (console && console.debug) {
+    console.debug(`[API Call] ${service}`, details);
+  }
+}
+
+function logApiError(error, status) {
+  apiMetrics.apiErrors++;
+  if (status === 429 || status === 403) {
+    apiMetrics.quotaExceeded++;
+  }
+  if (console && console.warn) {
+    console.warn(`[API Error] ${error.message} (Status: ${status})`);
+  }
 }

@@ -124,7 +124,8 @@ async function buscarVideosYouTube(query, { append = false, background = false }
       logApiError(new Error(`API Error: ${response.status}`), response.status);
       // Detectar cota/limite com backoff exponencial
       if (response.status === 429 || response.status === 403) {
-        const backoffTime = exponentialBackoff(apiMetrics.quotaExceeded, 60000, 300000); // 1min to 5min
+        const attemptCount = apiMetrics.quotaExceeded;
+        const backoffTime = exponentialBackoff(attemptCount, 60000, 300000); // 1min to 5min
         searchCooldownUntil = Date.now() + backoffTime;
         if (!background) {
           showNotification(`Limite de requisições atingido. Aguardando ${Math.ceil(backoffTime / 1000)}s.`);
