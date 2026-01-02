@@ -37,20 +37,22 @@ function onPlayerError(event) {
   setTimeout(playNext, 1000);
 }
 
-async function buscarVideosYouTube(query, { append = false } = {}) {
+async function buscarVideosYouTube(query, { append = false, background = false } = {}) {
   const raw = query || '';
-  const term = raw.trim().toLowerCase();
+  const term = normalizeQuery(raw);
 
   // Estado inicial (vazio) sem chamar API
   if (!term) {
-    resultadosDiv.innerHTML = `
-      <div class="text-center py-12 empty-state">
-        <div class="text-6xl mb-4">🔍</div>
-        <p class="text-xl text-purple-200 mb-2">Digite algo para buscar</p>
-        <p class="text-sm text-purple-300">Busque por músicas, artistas ou gêneros</p>
-      </div>
-    `;
-    lastQueryTerm = '';
+    if (!background) {
+      resultadosDiv.innerHTML = `
+        <div class="text-center py-12 empty-state">
+          <div class="text-6xl mb-4">🔍</div>
+          <p class="text-xl text-purple-200 mb-2">Digite algo para buscar</p>
+          <p class="text-sm text-purple-300">Busque por músicas, artistas ou gêneros</p>
+        </div>
+      `;
+      lastQueryTerm = '';
+    }
     return;
   }
 
@@ -60,26 +62,38 @@ async function buscarVideosYouTube(query, { append = false } = {}) {
   }
 
   // Cooldown ativo (quota/backoff)
-  if (Date.now() < searchCooldownUntil) {
+  if (Date.now() < searchCooldownUntil && !background) {
     const segundos = Math.ceil((searchCooldownUntil - Date.now()) / 1000);
-    resultadosDiv.innerHTML = `
-      <div class="text-center py-12 empty-state">
-        <div class="text-6xl mb-4">⏳</div>
-        <p class="text-xl text-purple-200 mb-2">Aguardando para nova busca</p>
-        <p class="text-sm text-purple-300">Tente novamente em ${segundos}s</p>
-      </div>
-    `;
+    if (!background) {
+      resultadosDiv.innerHTML = `
+        <div class="text-center py-12 empty-state">
+          <div class="text-6xl mb-4">⏳</div>
+          <p class="text-xl text-purple-200 mb-2">Aguardando para nova busca</p>
+          <p class="text-sm text-purple-300">Tente novamente em ${segundos}s</p>
+        </div>
+      `;
+    }
     return;
   }
 
-  // Cache disponível
+  // Cache-first strategy
   if (!append) {
-    const cached = readCache(term);
+    const cached = await readCache(term);
     if (cached && cached.items?.length) {
-      renderResults(cached.items, !!cached.nextPageToken, term, false);
-      lastQueryTerm = term;
-      lastPageTokenByTerm.set(term, { nextPageToken: cached.nextPageToken || null });
+      logCacheHit(term);
+      if (!background) {
+        renderResults(cached.items, !!cached.nextPageToken, term, false);
+        lastQueryTerm = term;
+        lastPageTokenByTerm.set(term, { nextPageToken: cached.nextPageToken || null });
+      }
+      // Revalidação em background se cache antigo (>30min)
+      const cacheAge = Date.now() - (cached.timestamp || 0);
+      if (cacheAge > 30 * 60 * 1000) {
+        buscarVideosYouTube(query, { append: false, background: true });
+      }
       return;
+    } else {
+      logCacheMiss(term);
     }
   }
 
@@ -89,7 +103,9 @@ async function buscarVideosYouTube(query, { append = false } = {}) {
   // Paginação: usar token salvo quando append = true
   const pageToken = append ? (lastPageTokenByTerm.get(term)?.nextPageToken || '') : '';
 
-  try {
+  const performApiCall = async () => {
+    logApiCall('YouTube Search', { term, append, pageToken });
+
     const url = new URL('https://www.googleapis.com/youtube/v3/search');
     url.searchParams.set('part', 'snippet');
     url.searchParams.set('q', `${term} karaoke OR lyrics`);
@@ -102,31 +118,52 @@ async function buscarVideosYouTube(query, { append = false } = {}) {
 
     const response = await fetch(url.toString());
 
-    if (myId !== currentRequestId) return; // resposta antiga, ignorar
+    if (myId !== currentRequestId && !background) return; // resposta antiga, ignorar
 
     if (!response.ok) {
-      // Detectar cota/limite
+      logApiError(new Error(`API Error: ${response.status}`), response.status);
+      // Detectar cota/limite com backoff exponencial
       if (response.status === 429 || response.status === 403) {
-        searchCooldownUntil = Date.now() + 60 * 1000; // 60s de backoff
-        showNotification('Limite de requisições atingido. Aguardando 60s.');
+        const backoffTime = exponentialBackoff(apiMetrics.quotaExceeded, 60000, 300000); // 1min to 5min
+        searchCooldownUntil = Date.now() + backoffTime;
+        if (!background) {
+          showNotification(`Limite de requisições atingido. Aguardando ${Math.ceil(backoffTime / 1000)}s.`);
+        }
       }
       throw new Error(`API Error: ${response.status}`);
     }
 
     const data = await response.json();
+    return data;
+  };
+
+  try {
+    const data = await retryWithBackoff(performApiCall, 3, 1000);
 
     const items = data.items || [];
     const nextPageToken = data.nextPageToken || null;
 
+    // Salvar metadados dos vídeos
+    for (const item of items) {
+      await saveVideoMetadata(item.id.videoId, {
+        title: item.snippet.title,
+        channelTitle: item.snippet.channelTitle,
+        thumbnails: item.snippet.thumbnails,
+        publishedAt: item.snippet.publishedAt
+      });
+    }
+
     if (!append) {
       // salvar no cache apenas para página inicial
-      saveCache(term, { items, nextPageToken });
-      lastQueryTerm = term;
+      await saveCache(term, { items, nextPageToken, timestamp: Date.now() });
+      if (!background) {
+        lastQueryTerm = term;
+      }
     }
 
     lastPageTokenByTerm.set(term, { nextPageToken });
 
-    if (!items.length && !append) {
+    if (!items.length && !append && !background) {
       resultadosDiv.innerHTML = `
         <div class="text-center py-12 empty-state">
           <div class="text-6xl mb-4">🔍</div>
@@ -137,10 +174,18 @@ async function buscarVideosYouTube(query, { append = false } = {}) {
       return;
     }
 
-    renderResults(items, !!nextPageToken, term, append);
+    if (!background) {
+      renderResults(items, !!nextPageToken, term, append);
+    } else if (append) {
+      // Background update: append silently or notify if new content
+      const currentItems = Array.from(resultadosDiv.querySelectorAll('.musica-card')).length;
+      if (items.length > currentItems) {
+        showNotification('Novos resultados disponíveis! Role para baixo para ver.');
+      }
+    }
   } catch (error) {
     console.error('Erro na busca:', error);
-    if (!append) {
+    if (!append && !background) {
       resultadosDiv.innerHTML = `
         <div class="text-center py-12 empty-state">
           <div class="text-6xl mb-4">⚠️</div>
@@ -150,6 +195,15 @@ async function buscarVideosYouTube(query, { append = false } = {}) {
       `;
     }
   }
+}
+
+// Normalização de queries
+function normalizeQuery(query) {
+  return query
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '') // remove pontuação
+    .replace(/\s+/g, ' '); // normaliza espaços
 }
 
 function renderResults(items, hasMore, term, append) {
@@ -188,9 +242,12 @@ function renderResults(items, hasMore, term, append) {
     moreBtn.id = 'yt-load-more';
     moreBtn.className = 'w-full mt-3 bg-purple-500/30 hover:bg-purple-500/50 text-white font-semibold px-4 py-2 rounded-xl transition-all';
     moreBtn.textContent = 'Carregar mais';
-    moreBtn.onclick = () => buscarVideosYouTube(term, { append: true });
+    moreBtn.onclick = throttle(() => buscarVideosYouTube(term, { append: true }), 1000);
     resultadosDiv.appendChild(moreBtn);
   }
+
+  // Setup scroll preloading
+  setupResultScrollPreloading();
 }
 
 // Alias para compatibilidade

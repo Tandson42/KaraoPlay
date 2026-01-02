@@ -40,28 +40,52 @@ function addCliente(nome) {
     }
   };
   
-  document.getElementById("buscar").onclick = () => {
+  document.getElementById("buscar").onclick = async () => {
     const termo = document.getElementById("busca").value;
-    buscarMusica(termo);
+    await buscarMusica(termo);
   };
   
-  document.getElementById("busca").onkeypress = (e) => {
+  document.getElementById("busca").onkeypress = async (e) => {
     if (e.key === 'Enter') {
-      document.getElementById("buscar").click();
+      await document.getElementById("buscar").click();
     }
   };
   
-  const debouncedSearch = debounce(() => {
+  const debouncedSearch = debounce(async () => {
     const termo = document.getElementById("busca").value;
     // Mínimo 3 caracteres ou vazio
     if (termo.trim().length >= 3 || termo.trim().length === 0) {
-      buscarMusica(termo);
+      await buscarMusica(termo);
     }
   }, 500);
 
   document.getElementById("busca").oninput = () => {
     debouncedSearch();
   };
+
+  // Scroll-based preloading para resultados
+  let scrollPreloadObserver = null;
+  function setupResultScrollPreloading() {
+    if (scrollPreloadObserver) scrollPreloadObserver.disconnect();
+
+    scrollPreloadObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+          // Usuário rolou 80% da lista, pré-carregar próxima página
+          const term = lastQueryTerm;
+          if (term && lastPageTokenByTerm.get(term)?.nextPageToken) {
+            buscarVideosYouTube(term, { append: true, background: true });
+          }
+        }
+      });
+    }, { threshold: 0.8 });
+
+    // Observar o último item da lista
+    const lastItem = resultadosDiv.lastElementChild;
+    if (lastItem && lastItem.classList.contains('musica-card')) {
+      scrollPreloadObserver.observe(lastItem);
+    }
+  }
 
   document.getElementById("limpar-fila").onclick = limparFila;
 
