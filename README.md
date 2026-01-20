@@ -77,3 +77,92 @@
 ```bash
 git clone https://github.com/Tandson42/KaraoPlay.git
 cd KaraoPlay
+```
+
+#### 2️⃣ Configurar a API Key
+No arquivo `js/state.js`:
+
+```javascript
+const YOUTUBE_API_KEY = 'SUA_CHAVE_AQUI';
+```
+
+#### 3️⃣ Executar com servidor local (recomendado)
+```bash
+# Python
+python3 -m http.server 8000
+
+# Node.js
+npx http-server -p 8000
+```
+
+Acesse:
+```
+http://localhost:8000
+```
+
+⚠️ **Para funcionamento completo do Fetch e IndexedDB, o uso de servidor HTTP é recomendado.**
+
+---
+
+## 🏗️ Arquitetura do Projeto
+
+```
+karaoplay/
+├── index.html
+├── style.css
+└── js/
+    ├── state.js    # Estado global, cache e utilitários
+    ├── queue.js    # Gerenciamento da fila de músicas
+    ├── youtube.js  # Integração com APIs do YouTube
+    └── ui.js       # Eventos, interface e fluxo do usuário
+```
+
+### Destaques Técnicos
+- Código modular com responsabilidades bem definidas
+- Cache em múltiplas camadas para reduzir consumo de API
+- Padrão stale-while-revalidate para melhor UX
+- Tratamento de erros e feedback visual ao usuário
+
+---
+
+## 🚧 Limitações Conhecidas
+
+- API Key do YouTube exposta no client-side (limitação natural de apps frontend)
+- ARIA labels e navegação por teclado podem ser aprimorados
+- IndexedDB pode crescer sem política agressiva de limpeza
+- Tailwind via CDN (em produção, ideal usar build otimizado)
+
+---
+
+## 🤖 Uso de Inteligência Artificial
+
+Este projeto contou com apoio parcial de ferramentas de IA (ex.: ChatGPT / Claude) para:
+
+- Revisão e melhoria de código
+- Sugestões de boas práticas
+- Apoio na documentação
+
+**Todas as decisões técnicas, arquitetura e validações finais foram realizadas pelo autor, que compreende integralmente o código e seu funcionamento.**
+
+---
+
+## 📄 Licença
+
+Este projeto é distribuído para fins educacionais e demonstrativos.
+
+---
+
+## 📞 Autor
+
+**Nome:** Tandson Filho  
+**GitHub:** [@Tandson42](https://github.com/Tandson42)
+
+---
+
+<div align="center">
+
+🎤 **KaraoPlay — Código, música e tecnologia em harmonia.**
+
+⭐ *Se achou interessante, deixe uma estrela no repositório!*
+
+</div>
